@@ -5,8 +5,13 @@
 module.exports = {
     en: {
         translation: {
-            // WELCOME_MSG: 'Welcome. You can set a timer by saying, set a timer of, followed by the duration. What would you like to do?',
-            WELCOME_MSG: 'Welcome to dev testing!',
+            //WELCOME_MSG: 'Testing',
+            
+            // CHANGED
+            WELCOME_MSG: 'Welcome to class time! You can start an activity by saying start followed by the activity name. What would you like to do?',
+            MUSIC_MSG: 'If you would like to listen to music during break, say play music.',
+            
+            // NOT CHANGED
             HELP_MSG: 'I can help you set a timer, check on a running timer, delete a timer or pause and resume timers. Which one would you like to try? ',
             REPROMPT_MSG: `What would you like to do next?`,
             GOODBYE_MSG: ['Goodbye! ', 'So long! ', 'See you later! ', 'Cheers! '],
@@ -24,7 +29,11 @@ module.exports = {
             TASK_TIMER_TITLE_MSG: 'My Task Timer',
             TASK_LOCALE_MSG: 'en-US',
             TASK_TEXT_MSG: 'Timer elapsed. Would you like to launch {continueWithSkillName}?',
-            VOICE_PERMISSION_ACCEPTED: 'You can now set a timer by saying, set a timer of, followed by the duration. ',
+            
+            // CHANGED
+            VOICE_PERMISSION_ACCEPTED: 'You can use class time! To start an activity, say start followed by the activity name.',
+            
+            // NOT CHANGED
             VOICE_PERMISSION_DENIED: 'We can\'t continue if you don\'t allow timers. Please try again later. ',
             VOICE_PERMISSION_ERROR: 'There was an error enabling the permissions. Please try again later. ',
             CREATE_TIMER_OK_MSG: 'Your timer is now running! If you want to check on it just say, check my timer. ',

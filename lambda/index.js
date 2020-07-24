@@ -45,7 +45,7 @@ function getAnnouncementTimer(handlerInput, duration, customParameters = {}) {
     		operation: {
     			type : 'ANNOUNCE',
     			textToAnnounce: [{
-    				locale: handlerInput.t('ANNOUNCEMENT_LOCALE_MSG'),
+    				locale: 'en-US',
     				text: customAnnouncement
     			}]
     		},
@@ -56,10 +56,29 @@ function getAnnouncementTimer(handlerInput, duration, customParameters = {}) {
     };
 }
 
-function getPredefinedTaskLaunchTimer(handlerInput, duration) {
+function getPredefinedTaskLaunchTimer(handlerInput, duration, customParameters = {}) {
+    console.log(`handlerInput : ${JSON.stringify(handlerInput)}, duration ; ${duration}, customParameters : ${JSON.stringify(customParameters)}`)
+
+    // Checks custom parameters and uses values if present, otherwise uses handlerInput
+    let customLabel = '';
+    if (customParameters && customParameters.label) {
+    	customLabel = customParameters.label;
+    } else {
+    	customLabel = handlerInput.t('ANNOUNCEMENT_TIMER_TITLE_MSG');
+    }
+    
+    let customAnnouncement = '';
+    if (customParameters && customParameters.announcementMessage) {
+    	customAnnouncement = customParameters.announcementMessage;
+    } else {
+    	customAnnouncement = handlerInput.t('ANNOUNCEMENT_TEXT_MSG');
+    }
+    
+    console.log(`customLabel : ${customLabel}, customAnnouncement : ${customAnnouncement}`);
+    
 	return {
 		duration: duration,
-		label: handlerInput.t('TASK_TIMER_TITLE_MSG'),
+		label: customLabel,
 		creationBehavior: {
 			displayExperience: {
 				visibility: 'VISIBLE'
@@ -69,35 +88,16 @@ function getPredefinedTaskLaunchTimer(handlerInput, duration) {
 			operation: {
 				type : 'LAUNCH_TASK',
 				textToConfirm: [{
-					locale: handlerInput.t('TASK_LOCALE_MSG'),
-					text: handlerInput.t('TASK_TEXT_MSG')
+					locale: 'en-US',
+					text: customAnnouncement
 				}],
 				task : {
-					name : 'AMAZON.ScheduleTaxiReservation',
+					name : 'SetBreak',
 					version : '1',
 					input : {
 						'@type': 'ScheduleTaxiReservationRequest',
-						'@version': '1',
-						'partySize': 4,
-						'pickupLocation': {
-							'@type': 'PostalAddress',
-							'@version': '1',
-							'streetAddress': '415 106th Ave NE',
-							'locality': 'Bellevue',
-							'region': 'WA',
-							'postalCode': '98004',
-							'country': 'US'
-						},
-						'pickupTime': null,
-						'dropoffLocation': {
-							'@type': 'PostalAddress',
-							'@version': '1',
-							'streetAddress': '2031 6th Ave.',
-							'locality': 'Seattle',
-							'region': 'WA',
-							'postalCode': '98121',
-							'country': 'US'
-						}
+						'@version': '1'
+						// No variables needed for set break intent, no customization available
 					}
 				}
 			},
@@ -291,9 +291,9 @@ const SetTemplateTimerIntentHandler = {
         		sessionAttributes['lastTimerId'] = timerId;
 
         		return handlerInput.responseBuilder
-        		.speak(hourMinuteStatement + ' of ' + activityCategory + ' time has begun!' + handlerInput.t('REPROMPT_MSG'))
-                    // .reprompt(handlerInput.t('REPROMPT_MSG'))
-                    // .getResponse();
+        		.speak(hourMinuteStatement + ' of ' + activityCategory + ' time has begun! If you would like a halfway notification, say add halfway notification.')
+                .reprompt(handlerInput.t('REPROMPT_MSG'))
+                .getResponse();
                 } else
                 throw { statusCode: 308, message: 'Timer did not start' };
                 
@@ -426,7 +426,7 @@ const SetHalfwayTemplateTimerIntentHandler = {
 
         let halfwayParameters = {
         	label : `Halfway timer`,
-        	announcementMessage : `We're halfway through ${activityCategory} time!`
+        	announcementMessage : `We're halfway through ${activityCategory} time! If you would like a break, say start break in class time`
         };
 
         const timer = TIMER_FUNCTION({}, halfISO8601Statement, halfwayParameters);
