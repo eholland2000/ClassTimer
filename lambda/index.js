@@ -286,6 +286,49 @@ const SetTemplateTimerIntentHandler = {
             })();
             console.log('timerHours', timerHours, 'timerMinutes', timerMinutes, 'hourMinuteStatement', hourMinuteStatement)
 
+            const halfISO8601Statement = (() => {
+    let response = 'PT';
+
+    let halfHours = 0;
+    let halfMinutes = 0;
+    let halfSeconds = 0;
+
+    // If the timer has an hours component, divide it in half and assign halfMinutes
+    if (timerHours) {
+        halfHours = timerHours / 2;
+        if (halfHours == 0) {
+            halfMinutes = 30
+        }
+        if (halfHours % 1 != 0) {
+            halfMinutes = 30;
+            halfHours = halfHours - 0.5;
+        }
+    }
+
+    // If the timer has a minutes component, divide it in half and add to halfMinutes and assign halfSeconds
+    if (timerMinutes) {
+        halfMinutes = halfMinutes + timerMinutes / 2;
+        // If it's a decimal
+        if (halfMinutes % 1 != 0) {
+            halfSeconds = 30;
+            halfMinutes = halfMinutes - 0.5;
+        }
+    }
+
+    if (halfHours) {
+        response = response + halfHours.toString() + 'H';
+    }
+    if (halfMinutes) {
+        response = response + halfMinutes.toString() + 'M';
+    }
+    if (halfSeconds) {
+        response = response + halfSeconds.toString() + 'S';
+    }
+
+    return response;
+
+})();
+
             if(timerStatus === 'ON') {
                 const sessionAttributes = attributesManager.getSessionAttributes();
                 sessionAttributes['lastTimerId'] = timerId;
