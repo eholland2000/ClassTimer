@@ -367,6 +367,52 @@ const SetTemplateTimerIntentHandler = {
     }
 };
 
+const PlayMusicIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+            && (handlerInput.requestEnvelope.request.intent.name === 'PlayMusicIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.ResumeIntent');
+    },
+    async handle(handlerInput) {
+        console.log('Starting Music...');
+        try {
+            return handlerInput.responseBuilder
+                .speak(handlerInput.t('now playing hit nation junior from eye heart radio!'))
+                .addDirective({
+                    type: 'AudioPlayer.Play',
+                    'playBehavior': 'REPLACE_ALL',
+                    'audioItem':  { 
+                        "stream": {     
+                            "url": "https://ample.revma.ihrhls.com/zc6395/44_e0z301j8gdam02/playlist.m3u8",
+                            "token": "class-time-audio-stream",
+                            "offsetInMilliseconds": 0,
+                        }
+                    }
+                }).getResponse();
+        } catch (error) {
+            console.log('Start Music error: ' + JSON.stringify(error));
+        }
+    }
+};
+
+const PauseMusicIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+            && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.PauseIntent';
+    },
+    async handle(handlerInput) {
+        console.log('Pausing Music...');
+        try {
+            return handlerInput.responseBuilder
+                .addDirective({
+                    type: "AudioPlayer.Stop"
+                }).getResponse();
+        } catch (error) {
+            console.log('Pause Music error: ' + JSON.stringify(error));
+        }
+    }
+};
+
 const SetTimerIntentHandler = {
     canHandle(handlerInput) {
         return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -765,6 +811,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         LaunchRequestHandler,
         AskForResponseHandler,
         SetTemplateTimerIntentHandler,
+        PlayMusicIntent,
+        PauseMusicIntent,
         SetTimerIntentHandler,
         ReadTimerIntentHandler,
         DeleteTimerIntentHandler,
