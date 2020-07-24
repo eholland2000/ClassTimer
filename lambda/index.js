@@ -485,6 +485,131 @@ try {
     }
 };
 
+const SetBreakIntentHandler = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+            && handlerInput.requestEnvelope.request.intent.name === 'SetBreakIntent';
+    },
+    async handle(handlerInput) {
+        const {requestEnvelope, attributesManager, serviceClientFactory} = handlerInput;
+        const breakType = Alexa.getSlotValue(requestEnvelope, 'break');
+        const duration = 'PT5M';
+        
+        console.log('SetBreakIntentHandler');
+        
+        // Sets the name of the timer in TIMER_FUNCTION
+        let parameters = {
+            label : `${breakType} timer`,
+            announcementMessage : `${breakType} time is up!`
+        };
+        
+        const timer = TIMER_FUNCTION(handlerInput, duration, parameters);
+        console.log('About to create timer: ' + JSON.stringify(timer));
+        try {
+            const timerServiceClient = serviceClientFactory.getTimerManagementServiceClient();
+            const timersList = await timerServiceClient.getTimers();
+            console.log('Current timers: ' + JSON.stringify(timersList));
+
+            const timerResponse = await timerServiceClient.createTimer(timer);
+            console.log('Timer creation response: ' + JSON.stringify(timerResponse));
+            
+            const timerId = timerResponse.id;
+            const timerStatus = timerResponse.status;
+            
+            const timerDuration = timerResponse.duration;
+            const timerHours = (() => {
+                const timerHoursArray = timerDuration.match(/(\d+H)/);
+                if (timerHoursArray) {
+                    const timerHoursWithLetter = timerHoursArray[timerHoursArray.length - 1];
+                    return timerHoursWithLetter.substring(0, timerHoursWithLetter.length - 1);
+                } else {
+                    return null;
+                }
+            })();
+            const timerMinutes = (() => {
+                const timerMinutesArray = timerDuration.match(/(\d+M)/);
+                if(timerMinutesArray) {
+                    const timerMinutesWithLetter = timerMinutesArray[timerMinutesArray.length - 1];
+                    return timerMinutesWithLetter.substring(0, timerMinutesWithLetter.length - 1);
+                } else {
+                    return null;
+                }
+            })();
+            const hourMinuteStatement = (() => {
+                let response = '';
+                
+                if (timerHours) {
+                    response = response + `${timerHours} hours`
+                }
+                if (response && timerMinutes) {
+                    response = response + ` and ${timerMinutes} minutes`    
+                } else {
+                    response = response + `${timerMinutes} minutes`
+                }
+                return response;
+            })();
+
+            if(timerStatus === 'ON') {
+                const sessionAttributes = attributesManager.getSessionAttributes();
+                sessionAttributes['lastTimerId'] = timerId;
+                return handlerInput.responseBuilder
+                    .speak(hourMinuteStatement + ' of ' + breakType + ' time has begun!' + handlerInput.t('MUSIC_MSG'))
+                    .reprompt(handlerInput.t('REPROMPT_MSG'))
+                    .getResponse();
+            } else
+                throw { statusCode: 308, message: 'Timer did not start' };
+                
+        } catch (error) {
+            console.log('Create timer error: ' + JSON.stringify(error));
+            if(error.statusCode === 401) {
+                console.log('Unauthorized!');
+                // we send a request to enable by voice
+                // note that you'll need another handler to process the result, see AskForResponseHandler
+                return handlerInput.responseBuilder
+                    .addDirective({
+                    type: 'Connections.SendRequest',
+                    'name': 'AskFor',
+                    'payload': {
+                        '@type': 'AskForPermissionsConsentRequest',
+                        '@version': '1',
+                        'permissionScope': TIMERS_PERMISSION
+                    },
+                    token: 'verifier'
+                }).getResponse();
+            }
+            else
+                return handlerInput.responseBuilder
+                        .speak(handlerInput.t('CREATE_TIMER_ERROR_MSG') + handlerInput.t('REPROMPT_MSG'))
+                        .reprompt(handlerInput.t('REPROMPT_MSG'))
+                        .getResponse();
+        }
+    }
+};
+
+const UnsupportedPlaybackIntent = {
+	canHandle(handlerInput) {
+		return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+		&& (handlerInput.requestEnvelope.request.intent.name === 'AMAZON.LoopOffIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.LoopOnIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.NextIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.PreviousIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.RepeatIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.ShuffleOffIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.ShuffleOnIntent'
+            || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StartOverIntent');
+	},
+	async handle(handlerInput) {
+		console.log('Unsupported Playback Operation: ' + handlerInput.requestEnvelope.request.intent.name);
+		try {
+			return handlerInput.responseBuilder
+			.speak(handlerInput.t('sorry! I can\'t do that while I\'m playing from class time!'))
+			.getResponse();
+		} catch (error) {
+			console.log('Start Music error: ' + JSON.stringify(error));
+		}
+	}
+};
+
 const PlayMusicIntent = {
 	canHandle(handlerInput) {
 		return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -929,7 +1054,9 @@ exports.handler = Alexa.SkillBuilders.custom()
 	LaunchRequestHandler,
 	AskForResponseHandler,
 	SetTemplateTimerIntentHandler,
-	SetHalfwayTemplateTimerIntentHandler,	
+    SetHalfwayTemplateTimerIntentHandler,
+    SetBreakIntentHandler,
+    UnsupportedPlaybackIntent,
 	PlayMusicIntent,
 	PauseMusicIntent,
 	SetTimerIntentHandler,
